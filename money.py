@@ -11,9 +11,12 @@ from decimal import ROUND_HALF_UP, Decimal
 
 CENTS = Decimal("0.01")
 
-# "R$ 1.234,56": optional minus sign, then "R$", then groups of three digits
-# separated by "." (the first group may be shorter), then exactly two decimals.
-_BRL_RE = re.compile(r"^(?P<sign>-?)R\$ ?(?P<integer>\d{1,3}(?:\.\d{3})*),(?P<cents>\d{2})$")
+# "R$ 1.234,56": optional minus sign, then "R$" and exactly one space, then an
+# integer part in canonical grouping (ASCII digits only, no leading zero group,
+# further groups of exactly three), then "," and exactly two decimals.
+_BRL_RE = re.compile(
+    r"(?P<sign>-?)R\$ (?P<integer>0|[1-9][0-9]{0,2}(?:\.[0-9]{3})*),(?P<cents>[0-9]{2})"
+)
 
 
 def _to_decimal(value: float) -> Decimal:
@@ -41,13 +44,15 @@ def format_brl(value: float) -> str:
 def parse_brl(text: str) -> float:
     """Read a string produced by :func:`format_brl` back into a float.
 
-    The whole string must match the Brazilian format: thousands grouped with
-    ".", exactly two decimals after ",", and the sign before ``R$``. Anything
-    else raises ``ValueError``; a non-string argument raises ``TypeError``.
+    The whole string must match the Brazilian format exactly: the sign before
+    ``R$``, a single space after it, ASCII digits with thousands grouped in
+    canonical threes and no leading zero group, and exactly two decimals after
+    ",". Nothing may surround it, not even whitespace. Anything else raises
+    ``ValueError``; a non-string argument raises ``TypeError``.
     """
     if not isinstance(text, str):
         raise TypeError("text must be a string")
-    match = _BRL_RE.match(text.strip())
+    match = _BRL_RE.fullmatch(text)
     if match is None:
         raise ValueError(f"not a Brazilian currency amount: {text!r}")
     integer = match["integer"].replace(".", "")

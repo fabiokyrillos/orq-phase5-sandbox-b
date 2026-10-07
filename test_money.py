@@ -50,14 +50,46 @@ class ParseBrlTest(unittest.TestCase):
         self.assertEqual(parse_brl("-R$ 5,00"), -5.0)
         self.assertEqual(parse_brl("R$ 0,00"), 0.0)
 
-    def test_parse_accepts_surrounding_whitespace_and_missing_space(self) -> None:
-        self.assertEqual(parse_brl("  R$ 7,25  "), 7.25)
-        self.assertEqual(parse_brl("R$7,25"), 7.25)
-
     def test_parse_round_trips_format(self) -> None:
         for value in (0.0, 0.5, -5.0, 1234.56, 1234567.89):
             with self.subTest(value=value):
                 self.assertEqual(parse_brl(format_brl(value)), value)
+
+    def test_parse_rejects_surrounding_whitespace(self) -> None:
+        for text in (" R$ 7,25", "R$ 7,25 ", "  R$ 7,25  ", "\tR$ 7,25", "R$ 7,25\t"):
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                parse_brl(text)
+
+    def test_parse_rejects_trailing_newline(self) -> None:
+        for text in ("R$ 7,25\n", "R$ 7,25\r\n", "\nR$ 7,25", "R$ 7,25\r"):
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                parse_brl(text)
+
+    def test_parse_rejects_wrong_spacing_after_symbol(self) -> None:
+        for text in (
+            "R$7,25",          # no space
+            "R$  7,25",        # two spaces
+            "R$ 7,25",    # non-breaking space
+            "R$\t7,25",        # tab
+            "R $ 7,25",        # space inside the symbol
+        ):
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                parse_brl(text)
+
+    def test_parse_rejects_unicode_digits(self) -> None:
+        for text in (
+            "R$ ７,２５",                  # fullwidth digits
+            "R$ ١.٢٣٤,٥٦",  # Arabic-Indic digits
+            "R$ 7,٢٥",                       # Arabic-Indic cents only
+            "R$ ۷,25",                            # extended Arabic-Indic digit
+        ):
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                parse_brl(text)
+
+    def test_parse_rejects_leading_zero_groups(self) -> None:
+        for text in ("R$ 0.123,45", "R$ 012,34", "R$ 00,00", "R$ 0.000.123,45"):
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                parse_brl(text)
 
     def test_parse_rejects_malformed_text(self) -> None:
         malformed = [
@@ -71,9 +103,12 @@ class ParseBrlTest(unittest.TestCase):
             "R$ 1.234,567",       # three decimals
             "R$ 1.234",           # no decimals
             "R$ -5,00",           # sign in the wrong place
+            "--R$ 5,00",          # doubled sign
+            "+R$ 5,00",           # explicit plus sign
             "R$ abc,00",
             "R$ 1.234,56 reais",  # trailing text
             "US$ 1.234,56",
+            "r$ 1.234,56",        # lowercase symbol
         ]
         for text in malformed:
             with self.subTest(text=text), self.assertRaises(ValueError):
