@@ -1,3 +1,3 @@
 # orq-phase5-sandbox-b
 
-Second sandbox for [orq](https://github.com/fabiokyrillos) Phase 5: concurrent runs across two projects. Throwaway code.
+Throwaway sandbox used by orq Phase 5 and Phase 6 tests (concurrency, rebase conflicts).
