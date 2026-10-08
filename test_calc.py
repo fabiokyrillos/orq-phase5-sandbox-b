@@ -1,6 +1,6 @@
 import unittest
 
-from calc import add, multiply, subtract
+from calc import add, clamp, multiply, subtract
 
 
 class AddTest(unittest.TestCase):
@@ -16,6 +16,35 @@ class SubtractTest(unittest.TestCase):
 class MultiplyTest(unittest.TestCase):
     def test_multiply(self) -> None:
         self.assertEqual(multiply(4, 2.5), 10.0)
+
+
+class ClampTest(unittest.TestCase):
+    def test_clamp_within_range(self) -> None:
+        self.assertEqual(clamp(5, 0, 10), 5)
+
+    def test_clamp_below_range(self) -> None:
+        self.assertEqual(clamp(-1, 0, 10), 0)
+
+    def test_clamp_above_range(self) -> None:
+        self.assertEqual(clamp(11, 0, 10), 10)
+
+    def test_clamp_at_boundaries(self) -> None:
+        self.assertEqual(clamp(0, 0, 10), 0)
+        self.assertEqual(clamp(10, 0, 10), 10)
+
+    def test_clamp_fractional_values(self) -> None:
+        self.assertEqual(clamp(2.5, 0.5, 1.5), 1.5)
+        self.assertEqual(clamp(0.25, 0.5, 1.5), 0.5)
+        self.assertEqual(clamp(1.25, 0.5, 1.5), 1.25)
+
+    def test_clamp_equal_bounds(self) -> None:
+        self.assertEqual(clamp(7, 3, 3), 3)
+        self.assertEqual(clamp(-7, 3, 3), 3)
+        self.assertEqual(clamp(3, 3, 3), 3)
+
+    def test_clamp_reversed_bounds(self) -> None:
+        with self.assertRaises(ValueError):
+            clamp(5, 10, 0)
 
 
 if __name__ == "__main__":
