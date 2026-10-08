@@ -1,6 +1,6 @@
 import unittest
 
-from calc import add, clamp, multiply, subtract
+from calc import add, clamp, multiply, sign, subtract
 
 
 class AddTest(unittest.TestCase):
@@ -45,6 +45,23 @@ class ClampTest(unittest.TestCase):
     def test_clamp_reversed_bounds(self) -> None:
         with self.assertRaises(ValueError):
             clamp(5, 10, 0)
+
+
+class SignTest(unittest.TestCase):
+    def test_sign_negative(self) -> None:
+        result = sign(-3.5)
+        self.assertEqual(result, -1)
+        self.assertIsInstance(result, int)
+
+    def test_sign_zero(self) -> None:
+        result = sign(0)
+        self.assertEqual(result, 0)
+        self.assertIsInstance(result, int)
+
+    def test_sign_positive(self) -> None:
+        result = sign(2)
+        self.assertEqual(result, 1)
+        self.assertIsInstance(result, int)
 
 
 if __name__ == "__main__":
